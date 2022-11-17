@@ -1,9 +1,6 @@
 package com.example.msccspringtesting.infrastructure.adapters.input.rest;
 
-import com.example.msccspringtesting.domain.exception.CustomerNotActiveException;
-import com.example.msccspringtesting.domain.exception.FundsInsufficientException;
-import com.example.msccspringtesting.domain.exception.TransferFundsNotPossibleException;
-import com.example.msccspringtesting.domain.exception.TransferTypeDisabledException;
+import com.example.msccspringtesting.domain.exception.*;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +19,13 @@ public class RestExceptionHandler {
     public ResponseEntity<ErrorMessage> handleException(RuntimeException ex, WebRequest request) {
         var message = new ErrorMessage(ex.getMessage());
         return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(value = {AccountNotFoundException.class,
+    CustomerNotFoundException.class})
+    public ResponseEntity<ErrorMessage> handleExceptionNotFound(RuntimeException ex, WebRequest request) {
+        var message = new ErrorMessage(ex.getMessage());
+        return new ResponseEntity<>(message, HttpStatus.NOT_FOUND);
     }
 
     @Data

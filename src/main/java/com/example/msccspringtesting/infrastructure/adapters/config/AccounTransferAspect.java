@@ -9,6 +9,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 @Aspect
@@ -25,7 +29,7 @@ public class AccounTransferAspect {
         log.info("before executing method");
         Object[] args = proceedingJoinPoint.getArgs();
         var accountTransfer = (AccountTransfer) args[0];
-        String customerNumber = accountTransfer.getCustomerNumber();
+        String customerNumber = this.getUserName();
         boolean isActive = this.customerRepository.findByRefId(customerNumber).orElseThrow(RuntimeException::new).isActive();
         if (isActive){
             String transferType = accountTransfer.getTransferType();
@@ -37,6 +41,11 @@ public class AccounTransferAspect {
         } else {
             throw new CustomerNotActiveException("Customer is not active. Cannot proceed for account transfer.");
         }
+    }
 
+    private String getUserName() {
+        JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        var jwt = (Jwt) authenticationToken.getCredentials();
+        return (String) jwt.getClaims().get("preferred_username");
     }
 }

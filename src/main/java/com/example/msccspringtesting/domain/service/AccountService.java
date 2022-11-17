@@ -3,6 +3,7 @@ package com.example.msccspringtesting.domain.service;
 import com.example.msccspringtesting.application.ports.input.AccountUseCase;
 import com.example.msccspringtesting.application.ports.output.AccountOutputPort;
 import com.example.msccspringtesting.domain.exception.AccountNotFoundException;
+import com.example.msccspringtesting.domain.exception.CustomerNotFoundException;
 import com.example.msccspringtesting.domain.model.Account;
 import lombok.RequiredArgsConstructor;
 
@@ -19,6 +20,10 @@ public class AccountService implements AccountUseCase {
 
     @Override
     public List<Account> getAccounts(String customerId) {
-        return this.accountOutputPort.getAccountByCustomerRefId(customerId);
+        var accounts =  this.accountOutputPort.getAccountByCustomerRefId(customerId);
+        if (accounts.isEmpty()) {
+            throw new CustomerNotFoundException("Customer does not exist");
+        }
+        return accounts;
     }
 }
