@@ -3,6 +3,7 @@ package com.example.msccspringtesting.domain.service;
 import com.example.msccspringtesting.application.ports.output.AccountTransferEventPublisher;
 import com.example.msccspringtesting.application.ports.output.AccountTransferOutputPort;
 import com.example.msccspringtesting.domain.event.AccountTransferEvent;
+import com.example.msccspringtesting.domain.exception.AccountTransferFailedException;
 import com.example.msccspringtesting.domain.exception.FundsInsufficientException;
 import com.example.msccspringtesting.domain.exception.TransferFundsNotPossibleException;
 import com.example.msccspringtesting.domain.model.Account;
@@ -84,11 +85,16 @@ class AccountTransferServiceTest {
     }
 
     @Test
+    @DisplayName("This test should throw an exception for any system,io error")
     void should_return_exception_for_internalserver_errors() {
-
+        Mockito.when(this.accountService.getAccountByAccountId(ArgumentMatchers.anyString())).thenReturn(getSenderAccount()).thenReturn(getReceiverAccount());
+        Mockito.when(this.accountTransferOutputPort.saveAccountTransfer(ArgumentMatchers.any(AccountTransfer.class))).thenThrow(new RuntimeException());
+        AccountTransfer accountTransfer = getAccountTransfer();
+        Assertions.assertThatThrownBy(() -> accountTransferService.createAccountTransfer(accountTransfer)).isInstanceOf(AccountTransferFailedException.class);
+        Mockito.verify(this.accountService, Mockito.times(2)).getAccountByAccountId(ArgumentMatchers.anyString());
+        Mockito.verify(this.accountTransferOutputPort, Mockito.times(1)).saveAccountTransfer(this.accountTransferArgumentCaptor.capture());
+        Mockito.verify(this.accountTransferEventPublisher, Mockito.times(0)).publishSuccessfulTransferEvent(ArgumentMatchers.any(AccountTransferEvent.class));
     }
-
-
 
     private static Account getSenderAccount() {
         Account account = new Account();
