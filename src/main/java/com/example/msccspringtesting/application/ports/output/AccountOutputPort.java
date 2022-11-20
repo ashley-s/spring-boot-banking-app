@@ -8,5 +8,5 @@ import java.util.Optional;
 public interface AccountOutputPort {
     List<Account> getAccountByCustomerRefId(String refId);
     Optional<Account> findAccountByAccountId(String accountId);
-    Account updateAccount(Account account);
+    void updateAccount(Account account);
 }

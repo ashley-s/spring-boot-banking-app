@@ -23,7 +23,7 @@ public class JwtSecurityConfig {
         http.authorizeRequests(authz -> authz.antMatchers(HttpMethod.GET, "/v1/customers/**", "/v1/accounts/**")
                         .hasRole("USER")
                         .antMatchers(HttpMethod.POST, "/v1/transfers/**")
-                        .hasRole("USER")
+                        .hasRole("PAY")
                         .anyRequest()
                         .authenticated())
                 .oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer -> httpSecurityOAuth2ResourceServerConfigurer.jwt().jwtAuthenticationConverter(jwtAuthenticationConverter()));
@@ -33,7 +33,6 @@ public class JwtSecurityConfig {
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         var jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(new KeycloakRealmRoleConverter());
-
         return jwtAuthenticationConverter;
     }
 
@@ -41,7 +40,7 @@ public class JwtSecurityConfig {
         public Collection<GrantedAuthority> convert(final Jwt jwt) {
             final Map<String, Object> realmAccess = (Map<String, Object>) jwt.getClaims().get("realm_access");
             return ((List<String>)realmAccess.get("roles")).stream()
-                    .map(roleName -> "ROLE_" + roleName) // prefix to map to a Spring Security "role"
+                    .map(roleName -> "ROLE_" + roleName)
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toList());
         }

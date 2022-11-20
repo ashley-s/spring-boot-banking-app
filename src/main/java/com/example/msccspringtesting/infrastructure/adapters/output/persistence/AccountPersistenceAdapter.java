@@ -4,9 +4,9 @@ import com.example.msccspringtesting.application.ports.output.AccountOutputPort;
 import com.example.msccspringtesting.domain.model.Account;
 import com.example.msccspringtesting.infrastructure.adapters.output.persistence.mapper.AccountMapper;
 import com.example.msccspringtesting.infrastructure.adapters.output.persistence.repository.AccountRepository;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
@@ -38,7 +38,7 @@ public class AccountPersistenceAdapter implements AccountOutputPort {
 
     @Override
     @CacheEvict(value = "users", key = "#account.customer.id + ''")
-    public Account updateAccount(Account account) {
-        return this.accountMapper.entityToModel(this.accountRepository.save(this.accountMapper.modelToEntity(account)));
+    public void updateAccount(Account account) {
+        this.accountMapper.entityToModel(this.accountRepository.save(this.accountMapper.modelToEntity(account)));
     }
 }

@@ -1,8 +1,6 @@
 package com.example.msccspringtesting.infrastructure.adapters.output.persistence.entity;
 
 import lombok.Data;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -22,10 +20,14 @@ public class TransactionEntity {
     @JoinColumn(name = "target_account_id")
     private AccountEntity receiverAccount;
     private double amount;
-    private LocalDateTime dateCreated;
+    private LocalDateTime completionDate;
     private String reference;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accounts_id")
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private AccountEntity accountOwner;
+
+    @PrePersist
+    public void setDateCreated() {
+        this.completionDate = LocalDateTime.now();
+    }
 }

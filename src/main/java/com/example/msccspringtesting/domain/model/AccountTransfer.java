@@ -4,15 +4,22 @@ import com.example.msccspringtesting.domain.exception.FundsInsufficientException
 import com.example.msccspringtesting.domain.exception.TransferFundsNotPossibleException;
 import lombok.Data;
 
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotBlank;
+import java.time.LocalDateTime;
+
 @Data
 public class AccountTransfer {
     private long id;
     private Account senderAccount;
     private Account receiverAccount;
+    @DecimalMin("1.00")
     private double amount;
+    @NotBlank
     private String transferType;
     private String status;
     private String reference;
+    private LocalDateTime dateCreated;
 
     /**
      * Handler that will verify the transferType and based on that, if accounts

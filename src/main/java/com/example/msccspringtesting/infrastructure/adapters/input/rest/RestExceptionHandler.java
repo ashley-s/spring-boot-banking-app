@@ -28,6 +28,12 @@ public class RestExceptionHandler {
         return new ResponseEntity<>(message, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(value = {AccountTransferFailedException.class})
+    public ResponseEntity<ErrorMessage> handleInternalServerError(RuntimeException ex, WebRequest request) {
+        var message = new ErrorMessage(ex.getMessage());
+        return new ResponseEntity<>(message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     @Data
     @RequiredArgsConstructor
     static class ErrorMessage {
