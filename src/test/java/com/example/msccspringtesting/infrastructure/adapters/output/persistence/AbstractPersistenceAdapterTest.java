@@ -3,6 +3,7 @@ package com.example.msccspringtesting.infrastructure.adapters.output.persistence
 import com.example.msccspringtesting.infrastructure.adapters.config.TestConfigPersistenceComponent;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -16,11 +17,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @ActiveProfiles(value = "mysql")
 @ContextConfiguration(classes = TestConfigPersistenceComponent.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public abstract class AbstractPersistenceAdapterTest {
 
     @Container
     private static final MySQLContainer<?> MY_SQL_CONTAINER = new MySQLContainer<>("mysql:5.7.22")
-            .withInitScript("init_scripts.sql");
+            .withInitScript("init_scripts.sql").withReuse(true);
 
     @DynamicPropertySource
     static void mySqlProperties(DynamicPropertyRegistry registry) {

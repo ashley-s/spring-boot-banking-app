@@ -16,7 +16,6 @@ public class AccountTransferEventPublisherAdapter implements AccountTransferEven
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
-    @Async
     public void publishSuccessfulTransferEvent(AccountTransferEvent accountTransferEvent) {
         log.info("Event published {}", accountTransferEvent);
         this.applicationEventPublisher.publishEvent(accountTransferEvent);

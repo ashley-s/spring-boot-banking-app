@@ -23,7 +23,7 @@ public class AccountTransferAspect {
     private final CustomerRepository customerRepository;
     private final PaymentTypesConfig paymentTypesConfig;
 
-    @Around("execution(public com.example.msccspringtesting.domain.model.AccountTransfer createAccountTransfer(..))")
+    @Around("target(com.example.msccspringtesting.domain.service.AccountTransferService) && execution(public com.example.msccspringtesting.domain.model.AccountTransfer createAccountTransfer(..))")
     public Object verifyUserEligilibityBeforeTransfer(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
         log.info("before executing method");
         Object[] args = proceedingJoinPoint.getArgs();

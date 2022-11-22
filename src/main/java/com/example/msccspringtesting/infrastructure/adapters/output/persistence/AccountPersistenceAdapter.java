@@ -4,7 +4,6 @@ import com.example.msccspringtesting.application.ports.output.AccountOutputPort;
 import com.example.msccspringtesting.domain.model.Account;
 import com.example.msccspringtesting.infrastructure.adapters.output.persistence.mapper.AccountMapper;
 import com.example.msccspringtesting.infrastructure.adapters.output.persistence.repository.AccountRepository;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;

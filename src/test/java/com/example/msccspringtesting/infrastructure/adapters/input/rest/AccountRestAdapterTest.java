@@ -9,10 +9,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.mockmvc.MockMvcRestDocumentation;
+import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
+import org.springframework.restdocs.payload.PayloadDocumentation;
+import org.springframework.restdocs.request.RequestDocumentation;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -24,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(AccountRestAdapter.class)
 @Import(value = JwtSecurityConfig.class)
+@AutoConfigureRestDocs
 class AccountRestAdapterTest {
 
     @Autowired
@@ -39,11 +45,17 @@ class AccountRestAdapterTest {
         account.setAccountNumber("123456789");
         account.setCurrentBalance(100.00);
         Mockito.when(this.accountUseCase.getAccounts(ArgumentMatchers.anyString())).thenReturn(List.of(account));
-        this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/customers/{customerRefId}/accounts", "123")
+        this.mockMvc.perform(RestDocumentationRequestBuilders.get("/v1/customers/{customerRefId}/accounts", "123")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size()").value(1))
-                .andExpect(jsonPath("$[0].accountNumber").value("123456789"));
+                .andExpect(jsonPath("$[0].accountNumber").value("123456789"))
+                .andDo(MockMvcRestDocumentation.document("get-accounts",
+                        RequestDocumentation.pathParameters(RequestDocumentation.parameterWithName("customerRefId").description("")),
+                        PayloadDocumentation.responseFields(PayloadDocumentation.fieldWithPath("[].accountNumber").description(""),
+                                PayloadDocumentation.fieldWithPath("[].id").description(""),
+                                PayloadDocumentation.fieldWithPath("[].currentBalance").description(""),
+                                PayloadDocumentation.fieldWithPath("[].customer").description(""))));
     }
 
     @Test
