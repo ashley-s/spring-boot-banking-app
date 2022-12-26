@@ -12,6 +12,7 @@ public class TransactionService implements TransactionUseCase {
 
     private final TransactionOutputPort transactionOutputPort;
 
+    @Override
     public List<Transaction> getTransactionsByAccountId(String accountId) {
         return this.transactionOutputPort.getTransactionByAccountId(accountId);
     }

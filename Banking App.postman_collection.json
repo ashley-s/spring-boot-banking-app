@@ -1,0 +1,183 @@
+{
+	"info": {
+		"_postman_id": "7687cef4-b818-4d7c-b0ca-f60ed51e2704",
+		"name": "Banking App",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1392775"
+	},
+	"item": [
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var response = JSON.parse(responseBody);\r",
+							"pm.collectionVariables.set(\"access_token\", response.access_token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "client_id",
+							"value": "spring-boot-client",
+							"type": "text"
+						},
+						{
+							"key": "username",
+							"value": "1024",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "password",
+							"type": "text"
+						},
+						{
+							"key": "grant_type",
+							"value": "password",
+							"type": "text"
+						},
+						{
+							"key": "client_secret",
+							"value": "VzZPD4geQ3ipryakVGb8yTMWBh4VQopK",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost/realms/test-realm/protocol/openid-connect/token",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"realms",
+						"test-realm",
+						"protocol",
+						"openid-connect",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Accounts",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/v1/customers/1/accounts",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"customers",
+						"1",
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Transactions",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/v1/accounts/00123456789/transactions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"accounts",
+						"00123456789",
+						"transactions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Account Transfer",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"senderAccount\": {\r\n        \"accountNumber\": \"00123456789\"\r\n    },\r\n    \"receiverAccount\": {\r\n        \"accountNumber\": \"00456789425\"\r\n    },\r\n    \"amount\": 1.0,\r\n    \"transferType\": \"OTHER\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/transfers",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"transfers"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "access_token",
+			"value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJOLVRKOFJFZi1pQ0VMZUVLa010cHVVT2hTQk9hdkRkejMxZGZrN1V1cEY4In0.eyJleHAiOjE2Njc5NjQ4NjYsImlhdCI6MTY2Nzk2NDU2NiwianRpIjoiMzkxNGZlMDEtZmNiNi00ODdlLThlMjItMDgyMGQ1MjViNjU4IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdC9yZWFsbXMvdGVzdC1yZWFsbSIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJmZGY3NzQ0ZC1kMDVlLTQ2ZTAtYWY3My00ZmZkZTEzYmViYzIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzcHJpbmctYm9vdC1jbGllbnQiLCJzZXNzaW9uX3N0YXRlIjoiNjVkZTMyOTUtNjM4OS00ZGI1LTllYzUtZWVmZDU4YmQ3MjlkIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJkZWZhdWx0LXJvbGVzLXRlc3QtcmVhbG0iLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiVVNFUiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsInNpZCI6IjY1ZGUzMjk1LTYzODktNGRiNS05ZWM1LWVlZmQ1OGJkNzI5ZCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbiIsImdpdmVuX25hbWUiOiIiLCJmYW1pbHlfbmFtZSI6IiIsImVtYWlsIjoiYWRtaW5AdGVzdC5jb20ifQ.asYXZB7fosVD9foncIiQNGSlYXbFN0_IOQS9b3hXRUZhxGcqgkWyxA8t9d7g5Xxnvg4u72kw3HW8p8R-8v8umeGFLRX41GgP2aNxXX-fBCRwMcGvvMyZ-PFojZ8eOlUqqwEhaC-o0VAh5HdYmAw99vo40J3wUrsGlRSiaWS6iblYk4G9h7sCPw6PLOF7pYs9rjL67dtkxmHVhBY3ZNMcBYq5ZOkyWGAoaMYHDeKzGZa8mcYqz4-wR2DwALlcQnOx1I30ZT7b2wG-u4H17wwlsKwtf5aSsXC2dqObjqIJYFdv0dQzbSSJez-N8Z1H6r1ZTW9WVxu_U8sp77ZWl4gtUA"
+		}
+	]
+}
