@@ -12,8 +12,13 @@ public class TransactionService implements TransactionUseCase {
 
     private final TransactionOutputPort transactionOutputPort;
 
+    /**
+     * Handler to retrieve a list of transactions based
+     * @param accountNumber
+     * @return
+     */
     @Override
-    public List<Transaction> getTransactionsByAccountId(String accountId) {
-        return this.transactionOutputPort.getTransactionByAccountId(accountId);
+    public List<Transaction> getTransactionsByAccountNumber(String accountNumber) {
+        return this.transactionOutputPort.getTransactionByAccountId(accountNumber);
     }
 }

@@ -14,10 +14,20 @@ public class AccountService implements AccountUseCase {
 
     private final AccountOutputPort accountOutputPort;
 
-    public Account getAccountByAccountId(String accountId) {
-        return this.accountOutputPort.findAccountByAccountId(accountId).orElseThrow(() -> new AccountNotFoundException("Account does not exist"));
+    /**
+     * Handler that will retrieve the model account given an account number
+     * @param accountNumber
+     * @return
+     */
+    public Account getAccountByAccountNumber(String accountNumber) {
+        return this.accountOutputPort.findAccountByAccountId(accountNumber).orElseThrow(() -> new AccountNotFoundException("Account does not exist"));
     }
 
+    /**
+     * Handler to retrieve list of accounts given the customer id.
+     * @param customerId
+     * @return
+     */
     @Override
     public List<Account> getAccounts(String customerId) {
         var accounts =  this.accountOutputPort.getAccountByCustomerRefId(customerId);

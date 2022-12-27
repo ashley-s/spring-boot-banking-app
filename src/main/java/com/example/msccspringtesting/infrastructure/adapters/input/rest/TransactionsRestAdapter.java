@@ -19,7 +19,7 @@ public class TransactionsRestAdapter {
 
     @GetMapping(value = "accounts/{accountNumber}/transactions")
     public ResponseEntity<List<Transaction>> getTransactions(@PathVariable String accountNumber){
-        return new ResponseEntity<>(this.transactionUseCase.getTransactionsByAccountId(accountNumber), HttpStatus.OK);
+        return new ResponseEntity<>(this.transactionUseCase.getTransactionsByAccountNumber(accountNumber), HttpStatus.OK);
     }
 
 }

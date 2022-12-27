@@ -4,6 +4,10 @@ import com.example.msccspringtesting.domain.model.Account;
 import lombok.Builder;
 import lombok.Data;
 
+/**
+ * On successful account transfer, the following
+ * model will be published.
+ */
 @Data
 @Builder
 public class AccountTransferEvent {

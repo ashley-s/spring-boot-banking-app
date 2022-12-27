@@ -37,7 +37,7 @@ class TransactionsRestAdapterTest {
         Transaction transaction = new Transaction();
         transaction.setAmount(100.00);
         transaction.setReference("20638fc9-65b2-454d-9298-fa5d41f091a4");
-        Mockito.when(this.transactionUseCase.getTransactionsByAccountId(ArgumentMatchers.anyString())).thenReturn(List.of(transaction));
+        Mockito.when(this.transactionUseCase.getTransactionsByAccountNumber(ArgumentMatchers.anyString())).thenReturn(List.of(transaction));
         this.mockMvc.perform(MockMvcRequestBuilders.get("/v1/accounts/{accountNumber}/transactions", "123456789")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

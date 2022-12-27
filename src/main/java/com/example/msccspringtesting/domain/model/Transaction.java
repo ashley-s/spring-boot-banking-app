@@ -4,6 +4,10 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * Model a transaction that happens after a
+ * successful account transfer between two accounts.
+ */
 @Data
 public class Transaction {
     private long id;

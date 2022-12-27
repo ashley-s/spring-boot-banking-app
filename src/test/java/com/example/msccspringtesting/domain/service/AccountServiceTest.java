@@ -33,7 +33,7 @@ class AccountServiceTest {
         accountFromDB.setAccountNumber("123456789");
         accountFromDB.setCurrentBalance(100.00);
         Mockito.when(this.accountOutputPort.findAccountByAccountId(ArgumentMatchers.anyString())).thenReturn(Optional.of(accountFromDB));
-        Account account = this.accountService.getAccountByAccountId("123456789");
+        Account account = this.accountService.getAccountByAccountNumber("123456789");
         Assertions.assertThat(account).isNotNull();
         Assertions.assertThat(account.getCurrentBalance()).isEqualTo(100.00);
         Mockito.verify(this.accountOutputPort, Mockito.times(1)).findAccountByAccountId(ArgumentMatchers.anyString());
@@ -43,7 +43,7 @@ class AccountServiceTest {
     @DisplayName("An exception will be thrown for an invalid account number")
     void should_throw_exception_for_non_existing_id() {
         Mockito.when(this.accountOutputPort.findAccountByAccountId(ArgumentMatchers.anyString())).thenThrow(new AccountNotFoundException("Account does not exist"));
-        Assertions.assertThatThrownBy(() -> this.accountService.getAccountByAccountId("123")).isInstanceOf(AccountNotFoundException.class);
+        Assertions.assertThatThrownBy(() -> this.accountService.getAccountByAccountNumber("123")).isInstanceOf(AccountNotFoundException.class);
         Mockito.verify(this.accountOutputPort, Mockito.times(1)).findAccountByAccountId(ArgumentMatchers.anyString());
     }
 

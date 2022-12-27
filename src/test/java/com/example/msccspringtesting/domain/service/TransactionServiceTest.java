@@ -27,7 +27,7 @@ class TransactionServiceTest {
         transaction.setAmount(100.00);
         transaction.setReference("20638fc9-65b2-454d-9298-fa5d41f091a4");
         Mockito.when(this.transactionOutputPort.getTransactionByAccountId(ArgumentMatchers.anyString())).thenReturn(List.of(transaction));
-        var transactions = this.transactionService.getTransactionsByAccountId("123456789");
+        var transactions = this.transactionService.getTransactionsByAccountNumber("123456789");
         Assertions.assertThat(transactions).isNotNull().hasSize(1);
         Assertions.assertThat(transactions.get(0).getAmount()).isEqualTo(100.00);
     }

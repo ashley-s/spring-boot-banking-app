@@ -44,7 +44,7 @@ class CreateAccountTransferIT {
     }
 
     @Test
-    @WithMockUser(username = "1022")
+    @WithCustomMockUser(username = "1022")
     @Sql(scripts = "classpath:init_scripts.sql")
     @Order(1)
     void should_publish_event_for_successful_transfer() {
@@ -53,7 +53,7 @@ class CreateAccountTransferIT {
     }
 
     @Test
-    @WithMockUser(username = "1025")
+    @WithCustomMockUser(username = "1025")
     @Order(2)
     void should_not_publish_event_for_disabled_customer() {
         Assertions.assertThatThrownBy(() -> this.accountTransferService.createAccountTransfer(buildAccountTransferSuccessful())).isInstanceOf(CustomerNotActiveException.class);

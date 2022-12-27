@@ -61,7 +61,7 @@ public class AccountTransferService implements AccountTransferUseCase {
      * @return
      */
     private Account getAccountByAccountNumber(String accountNumber) {
-        return this.accountService.getAccountByAccountId(accountNumber);
+        return this.accountService.getAccountByAccountNumber(accountNumber);
     }
 
     /**

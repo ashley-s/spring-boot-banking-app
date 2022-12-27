@@ -57,7 +57,7 @@ class AccountTransferRestAdapterTest {
     }
 
     @Test
-    @DisplayName("This test should return a successful account transfer provided the user has the roles PAY and the request body is valid")
+    @DisplayName("This test should return 400 with insufficient funds")
     @WithMockUser(username = "1012", roles = {"USER", "PAY"})
     void should_return_400_for_existing_customer_with_insufficent_funds() throws Exception {
         Mockito.when(this.accountTransferUseCase.createAccountTransfer(ArgumentMatchers.any(AccountTransfer.class))).thenThrow(new FundsInsufficientException("Insufficient funds"));
@@ -69,7 +69,7 @@ class AccountTransferRestAdapterTest {
     }
 
     @Test
-    @DisplayName("This test should return a successful account transfer provided the user has the roles PAY and the request body is valid")
+    @DisplayName("This test should return Internal Server Error since an exception is being thrown")
     @WithMockUser(username = "1012", roles = {"USER", "PAY"})
     void should_return_500_for_unexpected_error() throws Exception {
         Mockito.when(this.accountTransferUseCase.createAccountTransfer(ArgumentMatchers.any(AccountTransfer.class))).thenThrow(new AccountTransferFailedException("Internal Server Error has occurred"));
@@ -81,7 +81,7 @@ class AccountTransferRestAdapterTest {
     }
 
     @Test
-    @DisplayName("This test should return a successful account transfer provided the user has the roles PAY and the request body is valid")
+    @DisplayName("This test should return 400 since request body is invalid")
     @WithMockUser(username = "1012", roles = {"USER", "PAY"})
     void should_return_400_for_invalid_request_body() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.post("/v1/transfers").with(csrf())

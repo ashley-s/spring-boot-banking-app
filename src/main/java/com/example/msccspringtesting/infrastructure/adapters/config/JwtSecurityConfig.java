@@ -26,7 +26,7 @@ public class JwtSecurityConfig {
                         .hasRole("PAY")
                         .anyRequest()
                         .authenticated())
-                .oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer -> httpSecurityOAuth2ResourceServerConfigurer.jwt().jwtAuthenticationConverter(jwtAuthenticationConverter()));
+                .oauth2ResourceServer(httpSecurityOAuth2ResourceServerConfigurer -> httpSecurityOAuth2ResourceServerConfigurer.jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(jwtAuthenticationConverter())));
         return http.build();
     }
 
@@ -36,6 +36,9 @@ public class JwtSecurityConfig {
         return jwtAuthenticationConverter;
     }
 
+    /**
+     * Reading the JWT token to get roles from the claims.
+     */
     static class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
         public Collection<GrantedAuthority> convert(final Jwt jwt) {
             final Map<String, Object> realmAccess = (Map<String, Object>) jwt.getClaims().get("realm_access");
