@@ -184,3 +184,230 @@ public class JwtSecurityConfig {
     }
 }
 ```
+Our application is an Oauth2 Resource Server, which requires a valid JWT provided by an Authorization Server, which will then
+validate the token based on the configuration provided in the application.properties. In summary to access the endpoints, the user
+should have roles and this we need to test properly.
+
+With the annotation [@WithMockUser](https://docs.spring.io/spring-security/site/docs/4.0.x/apidocs/org/springframework/security/test/context/support/WithMockUser.html),
+it creates a user with roles that are specified, making sure that your HTTP Security Configuration is being well tested. For the test **should_return_403_for_existing_customer_with_incorrect_roles()**, if the 
+user does not have the roles PAY, the status returned will be forbidden.
+
+#### Database Layer Testing
+
+This is also very important to make sure that the entities are being persisted properly to the DB that will be actually used on
+production environment. TestContainers allows you to bring up the DB in docker as a container and then with @DataJPATest, only the
+Components related to such as Repository/JPA will be created in the context. 
+
+There are some common configuration that I have decided to put in a parent class and then all persistence classes related tests
+extend the latter.
+
+```java
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Testcontainers
+@ActiveProfiles(value = "mysql")
+@ContextConfiguration(classes = TestConfigPersistenceComponent.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+public abstract class AbstractPersistenceAdapterTest {
+
+    @Container
+    private static final MySQLContainer<?> MY_SQL_CONTAINER = new MySQLContainer<>("mysql:5.7.22")
+            .withInitScript("init_scripts.sql").withReuse(true);
+
+    @DynamicPropertySource
+    static void mySqlProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", () -> MY_SQL_CONTAINER.getJdbcUrl() + "?verifyServerCertificate=false&useSSL=false&requireSSL=false");
+        registry.add("spring.datasource.password", MY_SQL_CONTAINER::getPassword);
+        registry.add("spring.datasource.username", MY_SQL_CONTAINER::getUsername);
+    }
+
+}
+```
+The DB that we are going to use is MySQL and we have defined an application properties file accordingly for MySQL. As per the
+annotation @DataJPATest which scans only the Spring JPA components, we would need other beans as well so that our tests
+work correctly. We have defined a TestConfiguration class as per below.
+```java
+@TestConfiguration
+@ComponentScan(basePackages = "com.example.msccspringtesting.infrastructure.adapters.output.persistence")
+public class TestConfigPersistenceComponent {
+}
+```
+
+The annotation **@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)** actually clears the context after each test. The
+reason we are doing that is because for every persistence being run, a new container will be created and hence the database
+url changes. So we need to recreate a new context for each test so that the properties are refreshed.
+
+#### Spring Caching Integration Test
+
+This is also another interesting part where you can test Spring Caching capabilities. Regarding the feature that has been developed,. 
+the accounts are cached as the customer ID being the key, when it is being retrieved from the database. And then when the account is being
+updated for 1 customer, it will clear the accounts for that customer only as it is no more valid. So when the user will get accounts
+later, it will retrieve from the DB. Let's have a look at the first test method.
+
+```java
+@SpringJUnitConfig(AccountCachingTest.CachingTestConfig.class)
+class AccountCachingTest {
+
+    @Autowired
+    private AccountOutputPort accountPersistenceAdapterUnderTest;
+    @Autowired
+    private AccountRepository accountRepository;
+    @Autowired
+    private AccountMapper accountMapper;
+    @Autowired
+    private CacheManager cacheManager;
+
+    @TestConfiguration
+    @EnableCaching
+    public static class CachingTestConfig {
+
+        @Bean
+        public AccountOutputPort accountPersistenceAdapter() {
+            return new AccountPersistenceAdapter(accountRepository(), accountMapper());
+        }
+
+        @Bean
+        public AccountRepository accountRepository() {
+            return Mockito.mock(AccountRepository.class);
+        }
+
+        @Bean
+        public AccountMapper accountMapper() {
+            return Mockito.mock(AccountMapper.class);
+        }
+
+        @Bean
+        public CacheManager cacheManager() {
+            return new ConcurrentMapCacheManager("users");
+        }
+    }
+
+    @BeforeEach
+    void setUp() {
+        this.cacheManager.getCache("users").clear();
+        Mockito.reset(accountRepository);
+        Mockito.reset(accountMapper);
+    }
+
+    @Test
+    void should_store_accounts_inCache_for_customer_On_SecondCall() {
+        Mockito.when(this.accountRepository.findAllByCustomerId(ArgumentMatchers.anyLong())).thenReturn(List.of(new AccountEntity()));
+        Mockito.when(this.accountMapper.entityToModel(ArgumentMatchers.any(AccountEntity.class))).thenReturn(getSenderAccount());
+        Assertions.assertThat(this.cacheManager.getCache("users").get("1012")).isNull();
+        List<Account> accounts = this.accountPersistenceAdapterUnderTest.getAccountByCustomerRefId("1012");
+        Assertions.assertThat(accounts).hasSize(1);
+        Cache.ValueWrapper accountList = this.cacheManager.getCache("users").get("1012");
+        List<Account> accountList1 = (List<Account>) accountList.get();
+        Assertions.assertThat(accountList1).isNotNull().hasSize(1);
+        List<Account> accountsFromCache = this.accountPersistenceAdapterUnderTest.getAccountByCustomerRefId("1012");
+        Assertions.assertThat(accountsFromCache).hasSize(1);
+        Mockito.verify(this.accountRepository, Mockito.times(1)).findAllByCustomerId(ArgumentMatchers.anyLong());
+        Mockito.verify(this.accountMapper, Mockito.times(1)).entityToModel(ArgumentMatchers.any(AccountEntity.class));
+    }
+
+    @Test
+    void should_store_accounts_inCache_and_clear_on_update() {
+        Mockito.when(this.accountRepository.findAllByCustomerId(ArgumentMatchers.anyLong())).thenReturn(List.of(new AccountEntity()));
+        Mockito.when(this.accountMapper.entityToModel(ArgumentMatchers.any(AccountEntity.class))).thenReturn(getSenderAccount());
+        Mockito.when(this.accountMapper.modelToEntity(ArgumentMatchers.any(Account.class))).thenReturn(getSenderAccountEntity());
+        Mockito.when(this.accountRepository.save(ArgumentMatchers.any(AccountEntity.class))).thenReturn(getSenderAccountEntity());
+        Assertions.assertThat(this.cacheManager.getCache("users").get("1012")).isNull();
+        List<Account> accounts = this.accountPersistenceAdapterUnderTest.getAccountByCustomerRefId("1012");
+        Assertions.assertThat(accounts).hasSize(1);
+        Cache.ValueWrapper accountList = this.cacheManager.getCache("users").get("1012");
+        List<Account> accountList1 = (List<Account>) accountList.get();
+        Assertions.assertThat(accountList1).isNotNull().hasSize(1);
+        this.accountPersistenceAdapterUnderTest.updateAccount(getSenderAccount());
+        Assertions.assertThat(this.cacheManager.getCache("users").get("1012")).isNull();
+        List<Account> accountsSecondCall = this.accountPersistenceAdapterUnderTest.getAccountByCustomerRefId("1012");
+        Assertions.assertThat(accountsSecondCall).hasSize(1);
+        Mockito.verify(this.accountRepository, Mockito.times(2)).findAllByCustomerId(ArgumentMatchers.anyLong());
+        Mockito.verify(this.accountRepository, Mockito.times(1)).save(ArgumentMatchers.any(AccountEntity.class));
+        Mockito.verify(this.accountMapper, Mockito.times(3)).entityToModel(ArgumentMatchers.any(AccountEntity.class));
+    }
+}
+```
+
+We are using SpringJunitConfig annotation and loading the test configuration class which comprises the beans we need to perform
+this test. So the first test **should_store_accounts_inCache_for_customer_On_SecondCall()** we are looking is when retrieving records from the DB, it should be cached so that the second time
+we are retrieving the accounts, it should not be fetched from DB but from the cache. If you see properly, we are calling the method
+**getAccountByCustomerRefId()** twice but on verifying the mock, it is getting called only once.
+
+In the second test method **should_store_accounts_inCache_and_clear_on_update()**, we want to make sure that cache get cleared
+when updating the account so that it is retrieved from the DB on the second call.
+
+#### Aspect Integration Testing
+
+Let's go one step further and check whether the event is being generated for a successful account transfer. At the same time, we will test the aspect that is checking whether 
+the user is active and whether the payment type is allowed. Let's have a look at the code.
+
+```java
+@SpringBootTest
+@EnableConfigurationProperties(PaymentTypesConfig.class)
+@TestPropertySource(value = "classpath:application.properties")
+@Import(value = CreateAccountTransferIT.EventConsumer.class)
+class CreateAccountTransferIT {
+
+    @Autowired
+    private AccountTransferService accountTransferService;
+    @SpyBean
+    private EventConsumer eventConsumer;
+
+    @TestComponent
+    @Slf4j
+    public static class EventConsumer {
+        @EventListener
+        public void getEvents(AccountTransferEvent accountTransferEvent) {
+            log.info("Event consumed {}", accountTransferEvent);
+        }
+    }
+
+    @Test
+    @WithCustomMockUser(username = "1022")
+    @Sql(scripts = "classpath:init_scripts.sql")
+    @Order(1)
+    void should_publish_event_for_successful_transfer() {
+        this.accountTransferService.createAccountTransfer(buildAccountTransferSuccessful());
+        Mockito.verify(this.eventConsumer, Mockito.times(1)).getEvents(ArgumentMatchers.any(AccountTransferEvent.class));
+    }
+
+    @Test
+    @WithCustomMockUser(username = "1025")
+    @Order(2)
+    void should_not_publish_event_for_disabled_customer() {
+        Assertions.assertThatThrownBy(() -> this.accountTransferService.createAccountTransfer(buildAccountTransferSuccessful())).isInstanceOf(CustomerNotActiveException.class);
+        Mockito.verify(eventConsumer, Mockito.times(0)).getEvents(ArgumentMatchers.any(AccountTransferEvent.class));
+    }
+}
+```
+We are no more making a sliced test since we are using the annotation @SpringBootTest, which will create all beans and set up 
+an application context with all these beans allowing us to test all the layers of the application. Since the application is generating
+an event, we can create an event listener that will consume the events. For that, we are using the annotation @TestComponent 
+to create a component which will consume events of type AccountTransferEvent. 
+
+Moreover, in the aspect we have defined, we are retrieving a claim fom the JWT that is the username of the customer.
+Whenever we are logging in the application, an object of type JwtAuthenticationToken is created in 
+the Spring Security Context Holder. So we need to find a way to create same. Remember the annotation @WithMockUser, 
+we are doing something similar and creating our own. 
+
+```java
+public class WithMockUserSecurityContextFactory
+        implements WithSecurityContextFactory<WithCustomMockUser> {
+
+    private static final String tokenValue ="eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJOLVRKOFJFZi1pQ0VMZUVLa010cHVVT2hTQk9hdkRkejMxZGZrN1V1cEY4In0.eyJleHAiOjE2Njg5MjYxNTEsImlhdCI6MTY2ODkyNTg1MSwianRpIjoiODY1ZDc4YzgtZjZmOS00OTJkLThjMzctNWYwOTExMmI4Njg1IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdC9yZWFsbXMvdGVzdC1yZWFsbSIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiI1NzM5YmNkMy0xMmUwLTQyOGItOTQwZi1lNzMxZmY5ZjA1MTEiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzcHJpbmctYm9vdC1jbGllbnQiLCJzZXNzaW9uX3N0YXRlIjoiZDA0Y2ZiNmUtYWM3Yy00Mjc5LThiODAtMTgwZTdiMWRjMGUxIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJkZWZhdWx0LXJvbGVzLXRlc3QtcmVhbG0iLCJvZmZsaW5lX2FjY2VzcyIsIlBBWSIsInVtYV9hdXRob3JpemF0aW9uIiwiVVNFUiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsInNpZCI6ImQwNGNmYjZlLWFjN2MtNDI3OS04YjgwLTE4MGU3YjFkYzBlMSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiVGhlIFJvY2siLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiIxMDI0IiwiZ2l2ZW5fbmFtZSI6IlRoZSIsImZhbWlseV9uYW1lIjoiUm9jayIsImVtYWlsIjoiMTAyNEB0ZXN0LmNvbSJ9.DGChP_lICcf640RXY1KVL5DTjyYbdrVd64-Ngp9JsinRtrYwh-or2o1ti3J-QwahhVkDTfyuFZMzrUYv7rNd5eqYvPXT5BUDEmrcZV-Yui5OlFxrN4sZT2JtkdaCS5naj82KFepVcDkUYP6RpanqJL6j_7Vlgg_DkDXvL-eLHb6jUAjmJ1VZint8EOtgkYpjzsHc-BelXgcFfLPU-5V_mC1jFkCG9o4fIsx7JSMS_BphnHq81dl119g65XsQUVnNoCsAIgsD6vDtYcnwBVRg6R1jAsL4QwSxVLsjxGsYPMdc33LhO4Am-KODjdAAgcSjS7tJzPlFsHwuTOjZgh4QMA";
+    @Override
+    public SecurityContext createSecurityContext(WithCustomMockUser customUser) {
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        Jwt jwt = Jwt.withTokenValue(tokenValue).claim("preferred_username", customUser.username())
+                .header("alg", "HS256")
+                .header("typ", "JWT")
+                .build();
+
+        Authentication authentication = new JwtAuthenticationToken(jwt);
+        context.setAuthentication(authentication);
+        return context;
+    }
+}
+```
+In the above code, we are creating the JwtAuthenticationToken and then setting the claim with the 
+method argument. Running the test, we are able to verify that the event listener is consuming the events.

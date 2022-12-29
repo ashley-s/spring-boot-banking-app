@@ -60,7 +60,7 @@ class AccountTransferAspectTest {
         CustomerEntity customer = new CustomerEntity();
         customer.setActive(true);
         Mockito.when(this.customerRepository.findByRefId(ArgumentMatchers.anyString())).thenReturn(Optional.of(customer));
-        Assertions.assertThatCode(() -> this.accountTransferAspect.verifyUserEligilibityBeforeTransfer(this.proceedingJoinPoint)).doesNotThrowAnyException();
+        Assertions.assertThatCode(() -> this.accountTransferAspect.verifyUserBeforeTransfer(this.proceedingJoinPoint)).doesNotThrowAnyException();
     }
 
     @Test
@@ -71,7 +71,7 @@ class AccountTransferAspectTest {
         CustomerEntity customer = new CustomerEntity();
         customer.setActive(false);
         Mockito.when(this.customerRepository.findByRefId(ArgumentMatchers.anyString())).thenReturn(Optional.of(customer));
-        Assertions.assertThatThrownBy(() -> this.accountTransferAspect.verifyUserEligilibityBeforeTransfer(this.proceedingJoinPoint)).isInstanceOf(CustomerNotActiveException.class);
+        Assertions.assertThatThrownBy(() -> this.accountTransferAspect.verifyUserBeforeTransfer(this.proceedingJoinPoint)).isInstanceOf(CustomerNotActiveException.class);
     }
 
     @Test
@@ -83,7 +83,7 @@ class AccountTransferAspectTest {
         CustomerEntity customer = new CustomerEntity();
         customer.setActive(true);
         Mockito.when(this.customerRepository.findByRefId(ArgumentMatchers.anyString())).thenReturn(Optional.of(customer));
-        Assertions.assertThatThrownBy(() -> this.accountTransferAspect.verifyUserEligilibityBeforeTransfer(this.proceedingJoinPoint)).isInstanceOf(TransferTypeDisabledException.class);
+        Assertions.assertThatThrownBy(() -> this.accountTransferAspect.verifyUserBeforeTransfer(this.proceedingJoinPoint)).isInstanceOf(TransferTypeDisabledException.class);
     }
 
 }

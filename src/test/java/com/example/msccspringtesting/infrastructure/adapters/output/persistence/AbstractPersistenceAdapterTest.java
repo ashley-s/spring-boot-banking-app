@@ -22,7 +22,7 @@ public abstract class AbstractPersistenceAdapterTest {
 
     @Container
     private static final MySQLContainer<?> MY_SQL_CONTAINER = new MySQLContainer<>("mysql:5.7.22")
-            .withInitScript("init_scripts.sql").withReuse(true);
+            .withInitScript("init_scripts.sql");
 
     @DynamicPropertySource
     static void mySqlProperties(DynamicPropertyRegistry registry) {
